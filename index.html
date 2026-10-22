@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My Life</title>
+<meta name="theme-color" content="#c4501b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="My Life">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+<style>
+:root{--bg:#faf8f5;--card:#fff;--tx:#1d1b18;--mut:#6f6a62;--bd:#e4dfd7;--ac:#c4501b;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171513;--card:#211e1b;--tx:#f1ede6;--mut:#a39d93;--bd:#37322d;--ac:#ef7a45;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#171513;--card:#211e1b;--tx:#f1ede6;--mut:#a39d93;--bd:#37322d;--ac:#ef7a45;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1100px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:0 0 12px}
+nav{display:flex;gap:6px;overflow-x:auto;margin-bottom:14px}
+nav button{white-space:nowrap}
+button,input,select,textarea{font:inherit;color:inherit;background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:6px 10px}
+button{cursor:pointer}
+nav button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.bar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:10px}
+.grid .card{margin:0}
+.card.today{border-color:var(--ac);box-shadow:0 0 0 1px var(--ac)}
+h3{margin:0 0 8px;font-size:15px}
+h3 span,.mut,small{color:var(--mut);font-weight:400}
+.row{display:flex;align-items:center;gap:8px;margin:4px 0}
+.row span:first-of-type{flex:1}
+.row.dn span{text-decoration:line-through;color:var(--mut)}
+.tag{font-size:11px;font-style:normal;border:1px solid var(--bd);border-radius:6px;padding:0 6px;color:var(--mut)}
+.x{border:0;background:none;color:var(--mut);padding:0 4px}
+.r{margin-left:auto}
+.add{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.add input:not([type=number]):not([type=month]){flex:1;min-width:0}
+.add.big{margin:0 0 12px}
+.add button{background:var(--ac);border-color:var(--ac);color:#fff}
+.num{width:70px}
+.pb{height:8px;background:var(--bd);border-radius:4px;overflow:hidden;margin:8px 0}
+.pb div{height:100%;background:var(--ac)}
+big{display:block;font-size:26px;font-weight:700}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:6px}
+label{display:block;margin:10px 0 4px;font-weight:600}
+textarea{width:100%;min-height:80px}
+</style></head>
+<body><main>
+<h1>My Life</h1>
+<nav>
+<button data-t="semana" onclick="go('semana')">Semana</button>
+<button data-t="leitura" onclick="go('leitura')">Leituras</button>
+<button data-t="series" onclick="go('series')">Séries</button>
+<button data-t="invest" onclick="go('invest')">Investimentos</button>
+<button data-t="meta" onclick="go('meta')">Meta do ano</button>
+</nav>
+<div id="v"></div>
+</main>
+<script>
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let S={tasks:{},books:[],shows:[],inv:[],goal:{txt:'',start:'',target:0},cur:'€',tab:'semana'};
+try{const r=localStorage.getItem('planner365');if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+const save=()=>{try{localStorage.setItem('planner365',JSON.stringify(S))}catch(e){}};
+const iso=d=>{const z=new Date(d.getTime()-d.getTimezoneOffset()*60000);return z.toISOString().slice(0,10)};
+if(!S.goal.start)S.goal.start=iso(new Date());
+let off=0;
+const mon=o=>{const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7)+o*7);return d};
+const DN=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'],CATS=['3D','Estudo','Academia','Trabalho','Pessoal'],ST=['Assistindo','Quero ver','Concluída'];
+const money=v=>S.cur+' '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const mlab=m=>m.slice(5)+'/'+m.slice(0,4);
+const g=id=>document.getElementById(id);
+function go(t){S.tab=t;save();render()}
+function render(){
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===S.tab));
+  g('v').innerHTML=({semana,leitura,series,invest,meta})[S.tab]();
+}
+function semana(){
+  const m=mon(off),e=new Date(m);e.setDate(m.getDate()+6);
+  const f=d=>d.getDate()+'/'+(d.getMonth()+1);
+  let h='<div class="bar"><button onclick="off--;render()">‹</button><b>'+f(m)+' – '+f(e)+'</b><button onclick="off++;render()">›</button><button onclick="off=0;render()">Hoje</button></div><div class="grid">';
+  const today=iso(new Date());let tot=0,done=0;
+  for(let i=0;i<7;i++){
+    const d=new Date(m);d.setDate(m.getDate()+i);const k=iso(d),L=S.tasks[k]||[];
+    tot+=L.length;done+=L.filter(x=>x.d).length;
+    h+='<div class="card'+(k===today?' today':'')+'"><h3>'+DN[i]+' <span>'+f(d)+'</span></h3>'
+    +L.map((x,j)=>'<div class="row'+(x.d?' dn':'')+'"><input type="checkbox" '+(x.d?'checked':'')+' onchange="tg(\''+k+'\','+j+')"><span>'+esc(x.t)+'</span><i class="tag">'+esc(x.c)+'</i><button class="x" onclick="rm(\''+k+'\','+j+')">×</button></div>').join('')
+    +'<div class="add"><input id="t'+k+'" placeholder="Nova tarefa" onkeydown="if(event.key===\'Enter\')ad(\''+k+'\')"><select id="c'+k+'">'+CATS.map(c=>'<option>'+c+'</option>').join('')+'</select><button onclick="ad(\''+k+'\')">+</button></div></div>';
+  }
+  return h+'</div><p class="mut">'+done+' de '+tot+' tarefas concluídas nesta semana</p>';
+}
+function tg(k,j){S.tasks[k][j].d=S.tasks[k][j].d?0:1;save();render()}
+function rm(k,j){S.tasks[k].splice(j,1);save();render()}
+function ad(k){const t=g('t'+k).value.trim();if(!t)return;(S.tasks[k]=S.tasks[k]||[]).push({t,c:g('c'+k).value,d:0});save();render()}
+function del(k,i){S[k].splice(i,1);save();render()}
+function leitura(){
+  return '<div class="add big"><input id="bn" placeholder="Título do livro"><input id="bt" class="num" type="number" min="1" placeholder="Páginas"><button onclick="addB()">Adicionar</button></div>'
+  +(S.books.map((b,i)=>{const p=b.tot?Math.min(100,Math.round(b.p/b.tot*100)):0;
+    return '<div class="card"><div class="row"><b>'+esc(b.n)+'</b><button class="x r" onclick="del(\'books\','+i+')">×</button></div><div class="pb"><div style="width:'+p+'%"></div></div><div class="row mut">Página <input class="num" type="number" value="'+b.p+'" onchange="S.books['+i+'].p=+this.value;save();render()"> de '+b.tot+' · '+p+'%</div></div>'}).join('')||'<p class="mut">Nenhum livro ainda.</p>');
+}
+function addB(){const n=g('bn').value.trim();if(!n)return;S.books.push({n,p:0,tot:+g('bt').value||0});save();render()}
+function series(){
+  return '<div class="add big"><input id="sn" placeholder="Nome da série"><button onclick="addS()">Adicionar</button></div>'
+  +(S.shows.map((s,i)=>'<div class="card"><div class="row"><b>'+esc(s.n)+'</b><button class="x r" onclick="del(\'shows\','+i+')">×</button></div><div class="row mut">T <input class="num" type="number" value="'+s.s+'" onchange="S.shows['+i+'].s=+this.value;save()"> Ep <input class="num" type="number" value="'+s.e+'" onchange="S.shows['+i+'].e=+this.value;save()"><select onchange="S.shows['+i+'].st=this.value;save()">'+ST.map(x=>'<option'+(x===s.st?' selected':'')+'>'+x+'</option>').join('')+'</select></div></div>').join('')||'<p class="mut">Nenhuma série ainda.</p>');
+}
+function addS(){const n=g('sn').value.trim();if(!n)return;S.shows.push({n,s:1,e:1,st:'Assistindo'});save();render()}
+function invest(){
+  const cm=iso(new Date()).slice(0,7),sum=a=>a.reduce((x,y)=>x+y.v,0);
+  const mt=sum(S.inv.filter(x=>x.m===cm)),all=sum(S.inv),tg=+S.goal.target||0;
+  const ms=[...new Set(S.inv.map(x=>x.m))].sort().reverse();
+  return '<div class="stats"><div class="card"><small>Investido este mês</small><big>'+money(mt)+'</big>'
+  +(tg?'<div class="pb"><div style="width:'+Math.min(100,mt/tg*100)+'%"></div></div><small>Meta mensal: '+money(tg)+'</small>':'')
+  +'</div><div class="card"><small>Total acumulado</small><big>'+money(all)+'</big></div></div>'
+  +'<div class="add big"><select onchange="S.cur=this.value;save();render()">'+['€','R$','C$','US$'].map(c=>'<option'+(c===S.cur?' selected':'')+'>'+c+'</option>').join('')+'</select><input id="im" type="month" value="'+cm+'"><input id="iv" class="num" type="number" step="0.01" placeholder="Valor"><input id="in" placeholder="Onde (opcional)"><button onclick="addI()">Registrar</button></div>'
+  +(ms.map(m=>{const L=S.inv.map((x,i)=>({...x,i})).filter(x=>x.m===m);
+    return '<div class="card"><div class="row"><b>'+mlab(m)+'</b><span class="r">'+money(sum(L))+'</span></div>'+L.map(x=>'<div class="row mut"><span>'+esc(x.n||'Aporte')+'</span><span>'+money(x.v)+'</span><button class="x" onclick="del(\'inv\','+x.i+')">×</button></div>').join('')+'</div>'}).join('')||'<p class="mut">Registre seu primeiro aporte.</p>');
+}
+function addI(){const v=parseFloat(g('iv').value);if(!v)return;S.inv.push({m:g('im').value||iso(new Date()).slice(0,7),v,n:g('in').value.trim()});save();render()}
+function meta(){
+  const o=S.goal;let c='';
+  if(o.start){const s=new Date(o.start+'T12:00'),e=new Date(s);e.setFullYear(e.getFullYear()+1);
+    const tot=(e-s)/864e5,pas=Math.max(0,Math.min(tot,(new Date()-s)/864e5));
+    c='<div class="card"><big>'+Math.max(0,Math.ceil(tot-pas))+' dias restantes</big><div class="pb"><div style="width:'+(pas/tot*100)+'%"></div></div><small>O ano de foco termina em '+e.toLocaleDateString('pt-BR')+'</small></div>'}
+  return c+'<div class="card"><label>Meta do ano</label><textarea onchange="S.goal.txt=this.value;save()" placeholder="Escreva aqui o que você quer alcançar neste ano">'+esc(o.txt)+'</textarea><label>Início do ano de foco</label><input type="date" value="'+o.start+'" onchange="S.goal.start=this.value;save();render()"><label>Meta de investimento por mês</label><input type="number" step="0.01" value="'+(o.target||'')+'" onchange="S.goal.target=+this.value;save()"></div>';
+}
+render();
+if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script></body></html>
